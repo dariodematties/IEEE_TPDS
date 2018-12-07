@@ -360,6 +360,13 @@
 \usepackage[xindy]{glossaries}
 \loadglsentries{acronyms.tex}
 
+% *** SUBFIGURE PACKAGES ***
+\ifCLASSOPTIONcompsoc
+  \usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\else
+  \usepackage[caption=false,font=footnotesize]{subfig}
+\fi
+
 % *** Basic New Commands ***
 %
 \newcommand{\CC}{C\nolinebreak\hspace{-.05em}\raisebox{.4ex}{\tiny\bf +}\nolinebreak\hspace{-.10em}\raisebox{.4ex}{\tiny\bf +}}
@@ -502,12 +509,12 @@ E-mail: silvano@fi.uba.ar}% <-this % stops an unwanted space
 % in the abstract or keywords.
 \IEEEtitleabstractindextext{%
 \begin{abstract}
-The abstract goes here.
+Extreme high-end \gls{gpu} cards with its complementary software approaches have conducted a revolution in \gls{ml} and \gls{ai} through the use of \gls{hpc} resources. Nevertheless, the extraordinarily high parallel performance requirements demanded by ongoing applications have funneled the development path towards very acute computational perspectives--such as deep convolutional neural networks. Moreover, there exist a clear bias that favour efficient computation of certain matrix operations in \gls{gpu} or even neuromorphic chips, only because such operations are very used in convolutional neural networks. This specialization trend has improved parallelization efficiency considerably, but at the same time, it has imposed important limitations to alternative designs in order to take a real advantage of such parallelism. Biologically inspired computational models with sparse and random connectivity profiles--for example--are affected by such restrictions since their algorithms do not necessarily use precisely aligned matrix multiplications and hence data coalescence is seriously impaired in optimized chips. Furthermore, in front of the difficulty in finding the right level of biological plausibility when constructing a model, the parallelization strategy has to be robust enough as to not be affected by eventual algorithmic modifications. In this paper we introduce a hybrid \gls{mpi} and \gls{omp} parallelization scheme with which we parallelized our computational model inspired by the neuroanatomy and physiology of the mammalian cortical tissue. We ran computational tests on Cooley, a visualization and analysis cluster at Argonne National Laboratory. By means of Strong and Weak scaling assesses we obtained parallel efficiency measures with a minimum well above the 87\% and a maximum well above the 97\% for simulations of our biologically inspired neural network on up to 64 computing nodes running 8 threads each. This study provides a set of favourably efficient parallelization strategies to be used in highly flexible and biologically inspired computational experimental setups. In this work we also shown the viability in the application of these strategies in high-end leadership computers in the future.
 \end{abstract}
 
 % Note that keywords are not normally used for peerreview papers.
 \begin{IEEEkeywords}
-The key words go here.
+\gls{mpi}, \gls{omp}, \gls{stl} Containers, Biologically Inspired Computational Models
 \end{IEEEkeywords}}
 
 
@@ -586,11 +593,7 @@ Finding the appropriate level of detail in modeling the brain seems to be the ho
 
 Regarding software for computational modeling implementation, in the last years, extremely fast evolving and powerful \gls{dl} frameworks have established a dynamical landscape. The first generation of \gls{dl} frameworks--which had wide adoption in the scientific community--was built mainly in academia. \gls{caffe} was from Berkeley, Torch was developed originally in \gls{nyu} in collaboration with Facebook and Theano was mostly built at University of Montreal. The next generation originated in industry though, \gls{caffe}2 and Pytorch are from Facebook while TensorFlow is from Google. It is an interesting shift in the landscape given in the last years that gives us an idea about the level of development, refinement and sophistication that such frameworks could offer when starting a brain model or an \gls{ai} implementation~\cite{Bahrampour2015ComparativeSO,7979887}. Nevertheless, there are three main reasons that could lead to the use of one of those frameworks rather than just writing the code from scratch. 
 
-\begin{itemize}
-	\item The first reason is that these frameworks enable to easily deal and work with big computational graphs without worrying about all those bookkeeping details.
-	\item The second reason is that whenever working in \gls{dl} it will be always necessary to compute gradients, i.e. to compute some loss and then to compute the gradients about weights with respect to the loss. It would be better to make these operations as automated as possible. After all, nobody wants to struggle writing such code. Everyone wants the framework to handle all these backpropagation details. So the common scenario is writing only the forward pass of the network and having the backward pass sort of free without any significant addition to the code.
-	\item And finally it is desirable to have all this stuff running efficiently on \glspl{gpu} so nobody have to worry too much about those low level hardware details such as cuBLAS and cuDNN packages in \gls{cuda}, moving data between the \gls{cpu} and the \gls{gpu}, etc. Everybody can keep all those messy details hidden by these tools which take care of them.
-\end{itemize}
+The first reason is that these frameworks enable to easily deal and work with big computational graphs without worrying about all those bookkeeping details. The second reason is that whenever working in \gls{dl} it will be always necessary to compute gradients, i.e. to compute some loss and then to compute the gradients about weights with respect to the loss. It would be better to make these operations as automated as possible. After all, nobody wants to struggle writing such code. Everyone wants the framework to handle all these backpropagation details. So the common scenario is writing only the forward pass of the network and having the backward pass sort of free without any significant addition to the code. Finally it is desirable to have all this stuff running efficiently on \glspl{gpu} so nobody have to worry too much about those low level hardware details such as cuBLAS and cuDNN packages in \gls{cuda}, moving data between the \gls{cpu} and the \gls{gpu}, etc. Everybody can keep all those messy details hidden by these tools which take care of them.
 
 With those essential points in mind, we had to consider important aspects to take into account in order to pursue the implementation of our computational model. Firstly, the biological plausibility of our model freesed us from the need to compute gradients. Even though there exist important works supporting the idea that backpropagation could be a phenomenon happening in cortical tissue~\cite{Guerguiev2017TowardsDL}, we think that there is not enough evidence as to include so complex mechanism in our model yet. Instead, we decided to be conservative in that respect. Secondly, \gls{dl} frameworks are mainly biased towards \gls{gpu} parallelization on \gls{cuda} cores. Albeit those frameworks have been extremely optimized to take the maximum advantage especially from NVIDIA cards, too many conditions has to be satisfied in order to get the best performance. Although such frameworks have made an outstanding progress in the last years together with the development of their complementary hardware, we glimpsed an acute specialization of such technologies towards the precise development of certain \gls{dl} frameworks with little room for innovative and specifically biologically plausible implementations. In that sense, one of the biggest problems in such approaches arise when trying to implement neural populations with sparse or random connectivity structures. Those implementations--strongly demanded in biologically plausible modelling--compromise coalescence in \gls{gpu} cards and seriously impairs performance~\cite{doi:10.3109/0954898X.2012.739292}.
 
@@ -617,26 +620,16 @@ Following this line, we implemented our model in \CC14 using \gls{oop} paradigm 
 
 \subsection{Our Contributions}
 
-\begin{itemize}
 
-\item Implementation of a completely unsupervised and biologically inspired computational model which incorporates key properties from the mammalian cortex and returns phonetic features that improve the classification accuracy levels of the \gls{svm} algorithm in word classification tasks~\cite{Dematties2018}.
+In~\cite{Dematties2018} our group pursued the implementation of a completely unsupervised and biologically inspired computational model which incorporated key properties from the mammalian cortex and returned phonetic features that improved the classification accuracy levels of the \gls{svm} algorithm in word classification tasks in the presence of noise, reverberation and pitch variations not present during training.
 
-\item Implementation of our algorithms in standard \CC14 using \gls{stl} containers and the \gls{oop} paradigm in a set of classes interrelated by inheritance and composition.
-\item Parallelization of the code by means of a hybrid \gls{mpi}+\gls{omp} paradigm and usage of \gls{mpi} I/O parallel file system.
-\item Implementation of our own set of libraries in order to save the model status in Matlab and Octave file formats.
-\item Incorporation of Checkpoint and Restart capacity in the training stage where there is total flexibility in terms of the number of ranks with which the execution is restarted.
-\item In order to produce the inputs from auditory streams we followed main guidelines from Chi T. et al.~\cite{chi_2005} and implemented an algorithm called \gls{mrstsa}. Our implementation follows primarily the cortical section in~\cite{chi_2005} rather than its sub-cortical counterpart. We implemented the algorithm in C and parallelized it by means of \gls{mpi}+\gls{omp} hybrid paradigm using \gls{omp} parallel sections.
-\item In order to generate the corpora audio files we call Festival text to speech synthesizer~\cite{festival2014} implementing a Python code parallelized by means of a \gls{mpi} package for Python called mpi4py.
-\item Performing of all computational experiments on Cooley~\cite{noauthor_cooley_nodate}, a visualization and analysis cluster at Argonne National Laboratory.
+In this paper we introduce the parallelization strategies applied in the different algorithms of our modeling strategy in general. Our algorithms are implemented using the standard \CC14 with \gls{stl} containers and the \gls{oop} paradigm in a set of classes interrelated by inheritance and composition. The parallelization of the code is done by means of a hybrid \gls{mpi} and \gls{omp} paradigm and through the usage of \gls{mpi} I/O parallel file system. The output format of our modeling profile as well as the format with which we save the cortical layers status is binary Matlab and text Octave. In order to do that, we implemented our own set of libraries. We also incorporated Checkpoint and Restart capacity in the training stage where there is total flexibility in terms of the number of ranks with which the execution is restarted.
 
-	\begin{itemize}
-		\item Conducting of scaling tests on the \gls{el}--the central algorithm in our model--using up to 64 nodes (one \gls{mpi} rank per node) and up to 8 \gls{omp} threads per node/rank. Performing of strong and weak scaling tests and measurement of scaling efficiency on Cooley nodes.
-		\item Conducting of scaling tests on the \gls{mrstsa} algorithm using up to 64 nodes (one \gls{mpi} rank per node) and up to 5 \gls{omp} threads per node/rank. Performing of strong and weak scaling tests. Measurement of scaling efficiency on Cooley nodes.
-		\item Conducting of scaling tests on audio corpora generation algorithm in python using up to 6 nodes running 64 \gls{mpi} processes on 64 \glspl{cpu}. Performing of strong and weak scaling tests. Measurement of scaling efficiency on Cooley nodes.
+In order to produce the inputs from auditory streams we followed main guidelines from Chi T. et al.~\cite{chi_2005} and implemented an algorithm called \gls{mrstsa}~\cite{Dematties2018}. Our implementation follows primarily the cortical section in~\cite{chi_2005} rather than its sub-cortical counterpart. We implemented the algorithm in C and parallelized it by means of \gls{mpi} and \gls{omp} hybrid paradigm using \gls{omp} parallel sections.
 
-	\end{itemize}
+In order to generate the corpora audio files we call Festival text to speech synthesizer~\cite{festival2014} implementing a Python code parallelized by means of a \gls{mpi} package for Python called mpi4py.
 
-\end{itemize}
+We performed all computational experiments on Cooley~\cite{noauthor_cooley_nodate}, a visualization and analysis cluster at Argonne National Laboratory in which we executed the following tasks: first conducting of scaling tests on the \gls{el}--the central algorithm in our model--using up to 64 nodes (one \gls{mpi} rank per node) and up to 8 \gls{omp} threads per node/rank. Performing of strong and weak scaling tests and measurement of scaling efficiency on Cooley nodes. Second, conducting of scaling tests on the \gls{mrstsa} algorithm using up to 64 nodes (one \gls{mpi} rank per node) and up to 5 \gls{omp} threads per node/rank. Performing of strong and weak scaling tests. Measurement of scaling efficiency on Cooley nodes. Finally, conducting of scaling tests on audio corpora generation algorithm in python using up to 6 nodes running 64 \gls{mpi} processes on 64 \glspl{cpu}. Performing of strong and weak scaling tests. Measurement of scaling efficiency on Cooley nodes.
 
 The measurements of scaling efficiency returned by the tests conducted in this paper allow us to foresee an efficient use of high-end parallel computing resources. In this paper we have shown a viable parallelization approach for highly flexible implementations of cortical brain models in which data coalescent is not a tight requirement but rather an additional resource to speedup execution and to increment parallel performance by means of \gls{stl} containers. We have shown the versatility of this parallelization scheme on our brain inspired computational model of cortical dynamics with a random and a highly sparse connection profile. In this way we can claim that this parallelization strategy is an ideal procedure to approach new computational implementations, with more biological plausibility and with more irregular and unstructured data-set in high-end leadership computer resources.
 
@@ -861,12 +854,17 @@ The \gls{el} uses \gls{mpi} I/O parallel file system to save its status in Matla
 
 In this work, each \gls{mpi} rank runs in a diferent Cooley node and keeps all the data that corresponds to the \gls{el} object, such as \gls{el} dimensionality, receptive fields for each \gls{cc}, percentages of real connections in each receptive field for each \gls{cc}, population dimensionalities for the \glspl{cc} as well as the complete connectivity of each \gls{cc} and all the general parameters of the model such as learning rates, learning neighborhoods, etc~\cite{Dematties2018}. Although this general \gls{el} data is replicated in each \gls{mpi} rank this is not significant compared to the data corresponding to the \glspl{csom} objects. Each \gls{mpi} rank keeps only the data for those \glspl{csom} which are under its charge. Fig. \ref{fig:EL_ALG} depicts the general layout that follows the \gls{el} algorithm.
 
-\begin{figure}[h!]
+\begin{figure*}[ht]
     \centering
-    \includegraphics[width=0.5\textwidth]{EL_ALG.png}
+    \includegraphics[width=0.7\textwidth]{EL_ALG.png}
     \caption{General layout of the \gls{el} algorithm. Each \gls{mpi} rank keeps a private copy of the entire \gls{el} structure but only keeps the data of the \glspl{csom} which correspond to it. Each \gls{mpi} rank loads a private copy of the inputs that come from the \gls{mrstsa} algorithm. Then each \gls{mpi} rank processes the input information by means of only the \glspl{cc} which are under its charge, first entering to an \gls{omp} region in order to distribute \glspl{cc} in the rank among different \gls{omp} threads and then leaving the \gls{omp} region and communicating the outputs of all \glspl{cc} in the \gls{el} using \gls{mpi} \gls{ipc} tools. Finally each \gls{mpi} rank saves the status of its \glspl{cc} using \gls{mpi} parallel I/O sentences. \gls{mpi} rank 0 also saves the general structure of the \gls{el}.} 
     \label{fig:EL_ALG}
-\end{figure}
+\end{figure*}
+
+
+
+
+
 
 
 
@@ -1002,65 +1000,94 @@ Parallel scalability is a measurement that indicates how efficient is a code whe
 
 
 
-
 \subsection{\glsfirst{el} Scaling Tests}
 
-Fig. \ref{fig:Strong_Scaling} shows the strong scaling capacity of our code in terms of run time vs. number of processing elements used for the task. In these tests we constrained the code to run one \gls{mpi} rank per Cooley node. Each \gls{mpi} rank spreads an specific number of threads through the different \glspl{cpu} in its corresponding node (Fig. \ref{fig:Encoder_Parallelization}).
+Fig. \ref{fig:EL_Strong_Scaling} shows the strong scaling capacity of our code in terms of run time vs. number of processing elements used for the task. In these tests we constrained the code to run one \gls{mpi} rank per Cooley node. Each \gls{mpi} rank spreads an specific number of threads through the different \glspl{cpu} in its corresponding node (Fig. \ref{fig:Encoder_Parallelization}). The problem size stays fixed but the number of processing elements are increased. Figs.~\ref{sub:EL_Strong_Scaling_Left} and~\ref{sub:EL_Strong_Scaling1_Left} show--at first--a good scaling capacity. This is supported by Figs.~\ref{sub:EL_Strong_Scaling_Right} and~\ref{sub:EL_Strong_Scaling1_Right}. Let $t_1$ be the amount of time to complete a work unit with $1$ processing element, and $t_N$ the amount of time to complete the same unit of work with $N$ processing elements, the Strong Scaling Efficiency shown in Figs.~\ref{sub:EL_Strong_Scaling_Right} and~\ref{sub:EL_Strong_Scaling1_Right} is: $t_1 / (N * t_N) * 100$.
 
-\begin{figure}[h!]
+\begin{figure*}[tb] 
     \centering
-    \includegraphics[width=0.5\textwidth]{Strong_Scaling.png}
-    \caption{Strong scaling tests on Cooley nodes. Left: Strong scaling. Run time vs. the number of nodes for different number of threads per node. The problem size stays fixed but the number of processing elements are increased. Straight lines in logarithmic scales indicates good scaling capacity. Right: Strong scaling efficiency vs. the number of nodes for different numbers of threads per node. Let $t_1$ be the amount of time to complete a work unit with 1 processing element, and $t_N$ the amount of time to complete the same unit of work with $N$ processing elements, the Strong Scaling Efficiency is: $t_1 / (N * t_N) * 100$.}
-    \label{fig:Strong_Scaling}
-\end{figure}
+  \subfloat[Run time vs. the number of nodes for different number of threads per node.\label{sub:EL_Strong_Scaling_Left}]{%
+       \includegraphics[width=0.49\linewidth]{EL_Strong_Scaling_Left.png}}
+    \hfill
+  \subfloat[Efficiency vs. the number of nodes for different numbers of threads per node.\label{sub:EL_Strong_Scaling_Right}]{%
+        \includegraphics[width=0.49\linewidth]{EL_Strong_Scaling_Right.png}}
+\\
+  \subfloat[Run time vs. the number of nodes for different number of threads per node.\label{sub:EL_Strong_Scaling1_Left}]{%
+       \includegraphics[width=0.49\linewidth]{EL_Strong_Scaling1_Left.png}}
+    \hfill
+  \subfloat[Efficiency vs. the number of nodes for different numbers of threads per node. Reference is taken from 8 computing nodes ahead.\label{sub:EL_Strong_Scaling1_Right}]{%
+        \includegraphics[width=0.49\linewidth]{EL_Strong_Scaling1_Right.png}}
+	\caption{Strong scaling tests of the \gls{el} algorithm on Cooley nodes.}
+  \label{fig:EL_Strong_Scaling} 
+\end{figure*}
 
-For the tests shown in Fig.~\ref{fig:Strong_Scaling} we generated an \gls{el} whose specifications are shown in Table~\ref{Medium_Model}.
+%\begin{figure}[h!]
+    %\centering
+    %\includegraphics[width=0.5\textwidth]{Strong_Scaling.png}
+    %\caption{Strong scaling tests on Cooley nodes. Left: Strong scaling. Run time vs. the number of nodes for different number of threads per node. The problem size stays fixed but the number of processing elements are increased. Straight lines in logarithmic scales indicates good scaling capacity. Right: Strong scaling efficiency vs. the number of nodes for different numbers of threads per node. Let $t_1$ be the amount of time to complete a work unit with 1 processing element, and $t_N$ the amount of time to complete the same unit of work with $N$ processing elements, the Strong Scaling Efficiency is: $t_1 / (N * t_N) * 100$.}
+    %\label{fig:Strong_Scaling}
+%\end{figure}
 
-\begin{table}[h!]
+For the tests shown in Figs.~\ref{sub:EL_Strong_Scaling_Left} and~\ref{sub:EL_Strong_Scaling_Right} we generated an \gls{el} whose specifications are shown in Table~\ref{Medium_Model}, while for the tests shown in Figs.~\ref{sub:EL_Strong_Scaling1_Left} and~\ref{sub:EL_Strong_Scaling1_Right} we generated an \gls{el} whose specifications are shown in Table~\ref{Big_Model}.
+
+\begin{table*}[tb]
 \centering
 \caption{\gls{el} of normal size to test strong scaling on 1, 2, 4 and 8 computing nodes. The different \glspl{rf}, percentages and dimensionalities are explained in~\cite{Dematties2018}.}
-\resizebox{\columnwidth}{!}{%
+%\resizebox{\columnwidth}{!}{%
 \begin{tabular}{|c|l|l|l|l|l|l|l|}
 \hline
 Model  & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Number\\ of CCs\end{tabular}} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Afferent\\  RF\end{tabular}} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Afferent\\ \%\end{tabular}} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Lateral\\ RF\end{tabular}} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Lateral\\ \%\end{tabular}} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Population\\ Dimensionality\end{tabular}} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Potential\\ \%\end{tabular}} \\ \hline
 Normal & 23 x 23                                                                      & 5 x 127                                                                      & 5\%                                                                        & 9 x 9                                                                     & 90\%                                                                      & 15 x 15                                                                                  & 3\%                                                                         \\ \hline
-\end{tabular}}
+\end{tabular}%}
 \label{Medium_Model}
-\end{table}
+\end{table*}
 
-Firstly, this \gls{el} has 529 \glspl{cc}. In order to avoid scaling efficiency degradation, the \gls{el} has to keep certain number of \glspl{cc} per \gls{omp} thread. The worst case in Fig.~\ref{fig:Strong_Scaling} is for 8 nodes running 8 threads each (i.e. 64 threads). In such case we ended up having approximately 8.2 \glspl{cc} per \gls{omp} thread. As can be seen in Fig.~\ref{fig:Strong_Scaling} the strong scaling efficiency was never below 80\%. 
+Firstly, the \gls{el} tested in Figs.~\ref{sub:EL_Strong_Scaling_Left} and~\ref{sub:EL_Strong_Scaling_Right} has 529 \glspl{cc}. In order to avoid scaling efficiency degradation, the \gls{el} has to keep certain number of \glspl{cc} per \gls{omp} thread. The worst case in Fig.~\ref{sub:EL_Strong_Scaling_Left} is for 8 nodes running 8 threads each (i.e. 64 threads). In such case we ended up having approximately 8.2 \glspl{cc} per \gls{omp} thread. As can be seen in Fig.~\ref{sub:EL_Strong_Scaling_Right} the strong scaling efficiency was never below 80\%. 
 
 Since our computational model is intended to be run on leadership supercomputers--such as Theta at \gls{alcf}--in the future, it was necessary to test the Strong Scaling Efficiency of this on more computing nodes at Cooley. Specifically, we wanted to test the behaviour of the scaling running on up to 64 nodes with 8 \gls{omp} threads each since the more nodes you incorporate, the more \gls{ipc} load you have. In order to keep a considerable number of computing nodes per \gls{omp} thread we generated an \gls{el} with the specifications shown in Table~\ref{Big_Model}. 
 
-\begin{table}[h!]
+\begin{table*}[tb]
 \centering
 \caption{\gls{el} of large size to test strong scaling on 8, 16, 32 and 64 computing nodes. The different \glspl{rf}, percentages and dimensionalities are explained in~\cite{Dematties2018}.}
-\resizebox{\columnwidth}{!}{%
+%\resizebox{\columnwidth}{!}{%
 \begin{tabular}{|c|l|l|l|l|l|l|l|}
 \hline
 Model  & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Number\\ of CCs\end{tabular}} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Afferent\\  RF\end{tabular}} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Afferent\\ \%\end{tabular}} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Lateral\\ RF\end{tabular}} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Lateral\\ \%\end{tabular}} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Population\\ Dimensionality\end{tabular}} & \multicolumn{1}{c|}{\begin{tabular}[c]{@{}c@{}}Potential\\ \%\end{tabular}} \\ \hline
 Big & 128 x 128                                                                      & 5 x 127                                                                      & 5\%                                                                        & 9 x 9                                                                     & 90\%                                                                      & 15 x 15                                                                                  & 3\%                                                                         \\ \hline
-\end{tabular}}
+\end{tabular}%}
 \label{Big_Model}
-\end{table}
+\end{table*}
 
-This model has 16384 \glspl{cc} and for the worst case in which there are 64 computing nodes with 8 \gls{omp} threads each the model ended up distributing 32 \glspl{cc} per \gls{omp} thread. Each \gls{cc} in this model has 225 neural units to reach a total of 3686400 neural units. Each neural unit has 31 proximal (afferent) synapses and 432 distal (lateral) synapses to reach a total of 1706803200 synapses in the \gls{el}. Given the size of this model we could not run experiments from 1, 2 nor 4 computing nodes since the amount of time a simulation of such characteristics could take far exceeded the time provided by \texttt{qsub} command on Cooley. So we started the tests from 8 computing nodes for 1, 2, 4 and 8 \gls{omp} threads as shown in Fig.~\ref{fig:Strong_Scaling1}.
+This model has 16384 \glspl{cc} and for the worst case in which there are 64 computing nodes with 8 \gls{omp} threads each (512 threads) the model ended up distributing 32 \glspl{cc} per \gls{omp} thread. Each \gls{cc} in this model has 225 neural units to reach a total of 3686400 neural units. Each neural unit has 31 proximal (afferent) synapses and 432 distal (lateral) synapses to reach a total of 1706803200 synapses in the \gls{el}. Given the size of this model we could not run experiments from 1, 2 nor 4 computing nodes since the amount of time a simulation of such characteristics could take far exceeded the time provided by \texttt{qsub} command on Cooley. So we started the tests from 8 computing nodes for 1, 2, 4 and 8 \gls{omp} threads as shown in Fig.~\ref{sub:EL_Strong_Scaling1_Left}.
 
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.5\textwidth]{Strong_Scaling1.png}
-    \caption{Strong scaling tests on Cooley nodes. Left: Strong scaling. Run time vs. the number of nodes for different number of threads per node. The problem size stays fixed but the number of processing elements are increased. Straight lines in logarithmic scales indicates good scaling capacity. Right: Strong scaling efficiency vs. the number of nodes for different numbers of threads per node. Let $t_1$ be the amount of time to complete a work unit with 1 processing element, and $t_N$ the amount of time to complete the same unit of work with $N$ processing elements, the Strong Scaling Efficiency is: $t_1 / (N * t_N) * 100$.}
-    \label{fig:Strong_Scaling1}
-\end{figure}
+%\begin{figure*}[tb] 
+    %\centering
+  %\subfloat[Run time vs. the number of nodes for different number of threads per node.\label{sub:EL_Strong_Scaling1_Left}]{%
+       %\includegraphics[width=0.49\linewidth]{EL_Strong_Scaling1_Left.png}}
+    %\hfill
+  %\subfloat[Efficiency vs. the number of nodes for different numbers of threads per node.\label{sub:EL_Strong_Scaling1_Right}]{%
+        %\includegraphics[width=0.49\linewidth]{EL_Strong_Scaling1_Right.png}}
 
-As can be seen in the figure, the larger amount of compute nodes (\gls{mpi} ranks) with the consequent growth of \gls{mpi} \gls{ipc} load did not affect the strong scaling efficiency of the model which was well above the 85\%.
+  %\caption{Strong scaling tests on Cooley nodes. Reference is taken from 8 computing nodes ahead.}
+  %\label{fig:EL_Strong_Scaling1} 
+%\end{figure*}
+
+
+%\begin{figure}[h!]
+    %\centering
+    %\includegraphics[width=0.5\textwidth]{Strong_Scaling1.png}
+    %\caption{Strong scaling tests on Cooley nodes. Left: Strong scaling. Run time vs. the number of nodes for different number of threads per node. The problem size stays fixed but the number of processing elements are increased. Straight lines in logarithmic scales indicates good scaling capacity. Right: Strong scaling efficiency vs. the number of nodes for different numbers of threads per node. Let $t_1$ be the amount of time to complete a work unit with 1 processing element, and $t_N$ the amount of time to complete the same unit of work with $N$ processing elements, the Strong Scaling Efficiency is: $t_1 / (N * t_N) * 100$.}
+    %\label{fig:Strong_Scaling1}
+%\end{figure}
+
+As can be seen in Fig.~\ref{sub:EL_Strong_Scaling1_Right}, the larger amount of compute nodes (\gls{mpi} ranks) with the consequent growth of \gls{mpi} \gls{ipc} load did not affect the strong scaling efficiency of the model which was well above the 85\%.
 
 In reference to Weak Scaling, in order to keep the number of \glspl{cc} per \gls{omp} thread ratio constant we used the \glspl{el} detailed in the Table~\ref{Weak_Scaling_Models}. For all the cases detailed in the table, the ratio of \glspl{cc} per \gls{omp} thread was 32.
 
-\begin{table}[h!]
+\begin{table*}[tb]
 \centering
 \caption{\glspl{el} of different sizes to test weak scaling on 1, 2, 4, 8, 16, 32 and 64 computing nodes. The different \glspl{rf}, percentages and dimensionalities are explained in~\cite{Dematties2018}.}
-\resizebox{\columnwidth}{!}{%
+%\resizebox{\columnwidth}{!}{%
 \begin{tabular}{|c|c|c|c|c|c|c|c|}
 \hline
 \begin{tabular}[c]{@{}c@{}}Number of\\ Nodes\end{tabular} & \begin{tabular}[c]{@{}c@{}}Number\\ of CCs\end{tabular} & \begin{tabular}[c]{@{}c@{}}Afferent\\  RF\end{tabular} & \begin{tabular}[c]{@{}c@{}}Afferent\\ \%\end{tabular} & \begin{tabular}[c]{@{}c@{}}Lateral\\ RF\end{tabular} & \begin{tabular}[c]{@{}c@{}}Lateral\\ \%\end{tabular} & \begin{tabular}[c]{@{}c@{}}Population\\ Dimensionality\end{tabular} & \begin{tabular}[c]{@{}c@{}}Potential\\ \%\end{tabular} \\ \hline
@@ -1071,21 +1098,39 @@ In reference to Weak Scaling, in order to keep the number of \glspl{cc} per \gls
 16 Nodes                                                  & 64 x 64                                                 & 5 x 127                                                 & 5\%                                                   & 9 x 9                                                & 90\%                                                 & 15 x 15                                                             & 3\%                                                    \\ \hline
 32 Nodes                                                  & 64 x 128                                                & 5 x 127                                                 & 5\%                                                   & 9 x 9                                                & 90\%                                                 & 15 x 15                                                             & 3\%                                                    \\ \hline
 64 Nodes                                                  & 128 x 128                                               & 5 x 127                                                 & 5\%                                                   & 9 x 9                                                & 90\%                                                 & 15 x 15                                                             & 3\%                                                    \\ \hline
-\end{tabular}}
+\end{tabular}%}
 \label{Weak_Scaling_Models}
-\end{table}
+\end{table*}
 
-Fig.~\ref{fig:Weak_Scaling} shows the weak scaling performance of the model. As can be seen in the figure, the scaling efficiency was always above the 75\%. This measures show that the model parallel execution is not affected by \gls{mpi} \gls{ipc} load as the number of computing nodes increase. This scenario is specially evident for the case of one \gls{omp} thread in whose case the worst efficiency is over the 95\%.
+Fig.~\ref{fig:EL_Weak_Scaling} shows the weak scaling performance of the model. In this case the problem workload assigned to each processing element stays constant and additional elements are used to solve a larger total problem (i.e. a problem that would not fit in the available RAM on a single node). The bars in Fig.~\ref{sub:EL_Weak_Scaling_Left} shows--at first--a good scenario. As can be seen in Fig.~\ref{sub:EL_Weak_Scaling_Right}, the scaling efficiency was always above the 75\%. Let $t_1$ be the amount of time to complete a work unit with $1$ processing element, and $t_N$ the amount of time to complete $N$ times the same unit of work with $N$ processing elements, the Weak Scaling Efficiency is: $t_1 / t_N * 100$. This measures show that the model parallel execution is not affected by \gls{mpi} \gls{ipc} load as the number of computing nodes increases. This scenario is specially evident for the case of one \gls{omp} thread in whose case the worst efficiency is over the 95\%.
 
-
-\begin{figure}[h!]
+\begin{figure*}[tb] 
     \centering
-    \includegraphics[width=0.5\textwidth]{Weak_Scaling.png}
-    \caption{Weak scaling tests on Cooley nodes. Left: Weak scaling. Run time vs. the number of nodes for different number of threads per node. In this case the problem workload assigned to each processing element stays constant and additional elements are used to solve a larger total problem (i.e. a problem that would not fit in the available RAM on a single node). Right: Weak scaling efficiency vs. the number of nodes for different numbers of threads per node. Let $t_1$ be the amount of time to complete a work unit with 1 processing element, and $t_N$ the amount of time to complete $N$ times the same unit of work with $N$ processing elements, the Weak Scaling Efficiency is: $t_1 / t_N * 100$.}
-    \label{fig:Weak_Scaling}
-\end{figure}
+  \subfloat[Run time vs. the number of nodes for different number of threads per node.\label{sub:EL_Weak_Scaling_Left}]{%
+       \includegraphics[width=0.49\linewidth]{EL_Weak_Scaling_Left.png}}
+    \hfill
+  \subfloat[Efficiency vs. the number of nodes for different numbers of threads per node.\label{sub:EL_Weak_Scaling_Right}]{%
+        \includegraphics[width=0.49\linewidth]{EL_Weak_Scaling_Right.png}}
 
-Straight lines in the Figs.~\ref{fig:Strong_Scaling} and~\ref{fig:Strong_Scaling1} show an initially good strong scalability of our code while the small slope exhibited by Fig. \ref{fig:Weak_Scaling} allows us to foresee a good weak scaling performance of our code in high end leadership supercomputers too. All those visual results are supported by good measures of efficiency.
+	\caption{Weak scaling tests of the \gls{el} algorithm on Cooley nodes.}
+  \label{fig:EL_Weak_Scaling} 
+\end{figure*}
+
+
+%\begin{figure}[h!]
+    %\centering
+    %\includegraphics[width=0.5\textwidth]{Weak_Scaling.png}
+    %\caption{Weak scaling tests on Cooley nodes. Left: Weak scaling. Run time vs. the number of nodes for different number of threads per node. In this case the problem workload assigned to each processing element stays constant and additional elements are used to solve a larger total problem (i.e. a problem that would not fit in the available RAM on a single node). Right: Weak scaling efficiency vs. the number of nodes for different numbers of threads per node. Let $t_1$ be the amount of time to complete a work unit with 1 processing element, and $t_N$ the amount of time to complete $N$ times the same unit of work with $N$ processing elements, the Weak Scaling Efficiency is: $t_1 / t_N * 100$.}
+    %\label{fig:Weak_Scaling}
+%\end{figure}
+
+Figs.~\ref{sub:EL_Strong_Scaling_Left} and~\ref{sub:EL_Strong_Scaling1_Left} show an initially good strong scalability of our code while Fig. \ref{sub:EL_Weak_Scaling_Left} allows us to foresee a good weak scaling performance in high end leadership supercomputers too. All those visual results are supported by good measures of efficiency.
+
+
+
+
+
+
 
 
 
@@ -1104,27 +1149,56 @@ Straight lines in the Figs.~\ref{fig:Strong_Scaling} and~\ref{fig:Strong_Scaling
 
 \subsection{\glsfirst{mrstsa} Scaling Tests}
 
-We tested the scaling capacity of this code on Cooley nodes. In terms of Strong scaling, we run the algorithm in order to process 64 corpora--one corpus per vocabulary. The straight lines in Fig.~\ref{fig:MRSTSA_Scaling}--on the left--show a really good scaling of this code. Nevertheless, we have to take into account that each process/node computes an independent set of corpora and do not need to transmit the data to other processes/nodes in the \gls{mpi} session, we do not have \gls{ipc} issues in this code. This is called \emph{Embarrassingly parallel}~\cite{noauthor_embarrassingly_2018}. 
+We tested the scaling capacity of this code on Cooley nodes. In terms of Strong scaling, we run the algorithm in order to process 64 corpora--one corpus per vocabulary. Fig.~\ref{sub:MRSTSA_Strong_Scaling} shows a really good scaling of this code. The problem size stays fixed--64 corpora processing by means of \gls{mrstsa} algorithm--but the number of processing elements are increased.
 
-\begin{figure}[h!]
+\begin{figure*}[tb] 
     \centering
-    \includegraphics[width=0.5\textwidth]{MRSTSA_Scaling.png}
-    \caption{Strong and Weak scaling tests on Cooley nodes. Left: Strong scaling. Run time vs. the number of nodes for different number of threads per node. The problem size stays fixed--64 corpora processing by means of \gls{mrstsa} algorithm--but the number of processing elements are increased. Right: Weak scaling. Run time vs. the number of nodes for 5 threads per node. In this case the problem workload assigned to each processing element stays constant and additional elements are used to solve a larger total problem (i.e. we add more corpora for process as the number of nodes increases in such a way that each node has to process only one corpora).}
-    \label{fig:MRSTSA_Scaling}
-\end{figure}
+  \subfloat[Run time vs. the number of nodes for different number of threads per node.\label{sub:MRSTSA_Strong_Scaling}]{%
+       \includegraphics[width=0.49\linewidth]{MRSTSA_Strong_Scaling.png}}
+    \hfill
+  \subfloat[Run time vs. the number of nodes for 5 threads per node.\label{sub:MRSTSA_Weak_Scaling}]{%
+        \includegraphics[width=0.49\linewidth]{MRSTSA_Weak_Scaling.png}}
+\\
+  \subfloat[Efficiency vs. the number of nodes for different number of threads per node.\label{sub:MRSTSA_Strong_Scaling_Efficiency}]{%
+       \includegraphics[width=0.49\linewidth]{MRSTSA_Strong_Scaling_Efficiency.png}}
+    \hfill
+  \subfloat[Efficiency vs. the number of nodes for 5 threads per node.\label{sub:MRSTSA_Weak_Scaling_Efficiency}]{%
+        \includegraphics[width=0.49\linewidth]{MRSTSA_Weak_Scaling_Efficiency.png}}
+	\caption{Strong and Weak scaling tests of the \gls{mrstsa} algorithm on Cooley nodes.}
+  \label{fig:MRSTSA_Scaling} 
+\end{figure*}
+
+%\begin{figure}[h!]
+    %\centering
+    %\includegraphics[width=0.5\textwidth]{MRSTSA_Scaling.png}
+    %\caption{Strong and Weak scaling tests on Cooley nodes. Left: Strong scaling. Run time vs. the number of nodes for different number of threads per node. The problem size stays fixed--64 corpora processing by means of \gls{mrstsa} algorithm--but the number of processing elements are increased. Right: Weak scaling. Run time vs. the number of nodes for 5 threads per node. In this case the problem workload assigned to each processing element stays constant and additional elements are used to solve a larger total problem (i.e. we add more corpora for process as the number of nodes increases in such a way that each node has to process only one corpora).}
+    %\label{fig:MRSTSA_Scaling}
+%\end{figure}
 
 Each process run in a different node. We use a number of \gls{omp} threads which ranges from 1 to 5. Five is the number of spectral components in the \gls{mrstsa} algorithm~\cite{Dematties2018}. Another issue to take into account is that in order to make this code scale in the way showed by the chart, all the corpora have to have the same size, otherwise--and since the code distributes corporas on different processes in static way--some processes which take over smaller corpora would finish before other processes that take over larger corpora producing considerable load imbalance in the \gls{mpi} environment. We have to think in a way to make the distribution of corpora on processes dynamic--such as \gls{omp} dynamic schedule. Nevertheless, trying to balance the load among the different \gls{mpi} ranks could produce a severe degradation of Efficiency originated in the increased load of \gls{ipc} that such techniques require~\cite{hu2012biophysically}.
 
-In reference to Weak scaling, we processed one corpus per \gls{mpi} rank by means of the obvious strategy of processing one corpus for one \gls{mpi} rank, two corpora for two \gls{mpi} rank, four corpora for four \gls{mpi} rank and so on. The horizontal line in Fig.~\ref{fig:MRSTSA_Scaling}--on the right--shows that this code scales very well  in terms of weak scaling too.
+In reference to Weak scaling, we processed one corpus per \gls{mpi} rank by means of the obvious strategy of processing one corpus for one \gls{mpi} rank, two corpora for two \gls{mpi} rank, four corpora for four \gls{mpi} rank and so on. In Fig.~\ref{sub:MRSTSA_Weak_Scaling} the problem workload assigned to each processing element stays constant and additional elements are used to solve a larger total problem. We added more corpora per process as the number of nodes increases in such a way that each node has to process only one corpora. Fig.~\ref{sub:MRSTSA_Weak_Scaling} shows that this code scales very well in terms of weak scaling too.
 
-Finally, Fig.~\ref{fig:MRSTSA_Scaling_Efficiency} sustains the behavior of the charts with Strong Scaling Efficiencies well above the 96\% and with Weak Scaling Efficiencies above the 93\%.
+Finally, Figs.~\ref{sub:MRSTSA_Strong_Scaling_Efficiency} and~\ref{sub:MRSTSA_Weak_Scaling_Efficiency} sustains the behavior of the charts with Strong Scaling Efficiencies well above the 96\% and Weak Scaling Efficiencies above the 93\%.
 
-\begin{figure}[h!]
-    \centering
-    \includegraphics[width=0.5\textwidth]{MRSTSA_Scaling_Efficiency.png}
-    \caption{Strong and Weak scaling efficiency on Cooley nodes. Left: Strong scaling efficiency. Efficiency vs. the number of nodes for different number of threads per node. Let $t_1$ be the amount of time to complete a work unit with 1 processing element, and $t_N$ the amount of time to complete the same unit of work with $N$ processing elements, the Strong Scaling Efficiency is: $t_1 / (N * t_N) * 100$. Right: Weak scaling efficiency. Efficiency vs. the number of nodes for 5 threads per node. Let $t_1$ be the amount of time to complete a work unit with 1 processing element, and $t_N$ the amount of time to complete $N$ times the same unit of work with $N$ processing elements, the Weak Scaling Efficiency is: $t_1 / t_N * 100$.}
-    \label{fig:MRSTSA_Scaling_Efficiency}
-\end{figure}
+%\begin{figure*}[tb] 
+    %\centering
+  %\subfloat[Efficiency vs. the number of nodes for different number of threads per node.\label{sub:MRSTSA_Strong_Scaling_Efficiency}]{%
+       %\includegraphics[width=0.49\linewidth]{MRSTSA_Strong_Scaling_Efficiency.png}}
+    %\hfill
+  %\subfloat[Efficiency vs. the number of nodes for 5 threads per node.\label{sub:MRSTSA_Weak_Scaling_Efficiency}]{%
+        %\includegraphics[width=0.49\linewidth]{MRSTSA_Weak_Scaling_Efficiency.png}}
+
+  %\caption{Strong and Weak scaling efficiency on Cooley nodes.}
+  %\label{fig:MRSTSA_Scaling_Efficiency} 
+%\end{figure*}
+
+%\begin{figure}[h!]
+    %\centering
+    %\includegraphics[width=0.5\textwidth]{MRSTSA_Scaling_Efficiency.png}
+    %\caption{Strong and Weak scaling efficiency on Cooley nodes. Left: Strong scaling efficiency. Efficiency vs. the number of nodes for different number of threads per node. Let $t_1$ be the amount of time to complete a work unit with 1 processing element, and $t_N$ the amount of time to complete the same unit of work with $N$ processing elements, the Strong Scaling Efficiency is: $t_1 / (N * t_N) * 100$. Right: Weak scaling efficiency. Efficiency vs. the number of nodes for 5 threads per node. Let $t_1$ be the amount of time to complete a work unit with 1 processing element, and $t_N$ the amount of time to complete $N$ times the same unit of work with $N$ processing elements, the Weak Scaling Efficiency is: $t_1 / t_N * 100$.}
+    %\label{fig:MRSTSA_Scaling_Efficiency}
+%\end{figure}
 
 
 
@@ -1143,24 +1217,41 @@ Finally, Fig.~\ref{fig:MRSTSA_Scaling_Efficiency} sustains the behavior of the c
 
 \subsection{Corpora Generation Scaling Tests}
 
-In terms of Strong and Weak scaling (Fig.~\ref{fig:CorporaGenerationScaling}), we ran the algorithm in order to create 64 corpora from 64 vocabularies--one corpus per vocabulary. The code generated 64 cross synthesizer SABLE text files and then called to Festival using \texttt{text2wav} script in order to generate the audio \texttt{wav} files which uttered the text in the SABLE files.
+In terms of Strong and Weak scaling (Fig.~\ref{fig:Corpora_Scaling}), we ran the algorithm in order to create 64 corpora from 64 vocabularies--one corpus per vocabulary. The code generated 64 cross synthesizer SABLE text files and then called to Festival using \texttt{text2wav} script in order to generate the audio \texttt{wav} files which uttered the text in the SABLE files.
 
-\begin{figure}[h!]
+\begin{figure*}[tb] 
     \centering
-    \includegraphics[width=0.5\textwidth]{CorporaGenerationScaling.png}
-    \caption{Strong and Weak scaling test on Cooley nodes. Left: Strong Scaling. Run time and Efficiency vs. the number of \glspl{cpu}. The problem size stays fixed, that is, the run has to generate 64 corpora. On the other hand the number of processing elements is increased from 1 to 64 \glspl{cpu} in powers of two. Right: Weak scaling. Run time and Efficiency vs. the number of \glspl{cpu}. In this case the problem workload assigned to each processing element stays constant and additional elements are used to solve a larger total problem (i.e. as we add more \glspl{cpu} we add more corpora in a way that one corpus is generated by \gls{cpu}). Since Cooley nodes have 12 \glspl{cpu} we had to ask for 2 nodes in order to run on 16 \glspl{cpu}, 3 nodes in order to run on 32 \glspl{cpu} and 6 nodes in order to run on 64 \glspl{cpu}.}
-    \label{fig:CorporaGenerationScaling}
-\end{figure}
+  \subfloat[Strong Scaling. Run time vs. the number of \glspl{cpu}.\label{sub:Corpora_Strong_Scaling}]{%
+       \includegraphics[width=0.49\linewidth]{Corpora_Strong_Scaling.png}}
+    \hfill
+  \subfloat[Weak scaling. Run time vs. the number of \glspl{cpu}.\label{sub:Corpora_Weak_Scaling}]{%
+	\includegraphics[width=0.49\linewidth]{Corpora_Weak_Scaling.png}}
+\\
+  \subfloat[Strong Scaling. Efficiency vs. the number of \glspl{cpu}.\label{sub:Corpora_Strong_Scaling_Efficiency}]{%
+       \includegraphics[width=0.49\linewidth]{Corpora_Strong_Scaling_Efficiency.png}}
+    \hfill
+  \subfloat[Weak scaling. Efficiency vs. the number of \glspl{cpu}.\label{sub:Corpora_Weak_Scaling_Efficiency}]{%
+	\includegraphics[width=0.49\linewidth]{Corpora_Weak_Scaling_Efficiency.png}}
+  \caption{Strong and Weak scaling test of Corpora Generation on Cooley nodes. Since Cooley nodes have 12 \glspl{cpu} we had to ask for 2 nodes in order to run on 16 \glspl{cpu}, 3 nodes in order to run on 32 \glspl{cpu} and 6 nodes in order to run on 64 \glspl{cpu}.}
+  \label{fig:Corpora_Scaling} 
+\end{figure*}
 
-The straight line in Fig.~\ref{fig:CorporaGenerationScaling} upper-left shows a good scaling of our code. Nevertheless, we have to take into account that each process produces an independent set of corpora and does not need to transmit any data to other processes in the \gls{mpi} session. Then, we did not have \gls{ipc} issues in this code (this is pure parallelization, also called \emph{Embarrassingly parallel}~\cite{noauthor_embarrassingly_2018}).
+%\begin{figure}[h!]
+    %\centering
+    %\includegraphics[width=0.5\textwidth]{CorporaGenerationScaling.png}
+    %\caption{Strong and Weak scaling test on Cooley nodes. Left: Strong Scaling. Run time and Efficiency vs. the number of \glspl{cpu}. The problem size stays fixed, that is, the run has to generate 64 corpora. On the other hand the number of processing elements is increased from 1 to 64 \glspl{cpu} in powers of two. Right: Weak scaling. Run time and Efficiency vs. the number of \glspl{cpu}. In this case the problem workload assigned to each processing element stays constant and additional elements are used to solve a larger total problem (i.e. as we add more \glspl{cpu} we add more corpora in a way that one corpus is generated by \gls{cpu}). Since Cooley nodes have 12 \glspl{cpu} we had to ask for 2 nodes in order to run on 16 \glspl{cpu}, 3 nodes in order to run on 32 \glspl{cpu} and 6 nodes in order to run on 64 \glspl{cpu}.}
+    %\label{fig:CorporaGenerationScaling}
+%\end{figure}
 
-In this case we ran one \gls{mpi} rank per \gls{cpu}. Since one Cooley Node has 12 \glspl{cpu} we just needed 1 node in order to run 1, 2, 4 or 8 processes, 2 nodes (24 \glspl{cpu}) in order to run 16 processes, 3 nodes (36 \glspl{cpu}) in order to run 32 processes and finally 6 nodes (72 \glspl{cpu}) in order to run 64 processes.
+Fig.~\ref{sub:Corpora_Strong_Scaling} shows a good strong scaling capacity of our code. As before, for strong scaling performance tests the problem size stays fixed, that is, the run has to generate 64 corpora. On the other hand the number of processing elements is increased from 1 to 64 \glspl{cpu} in powers of two. In this case we ran one \gls{mpi} rank per \gls{cpu}. Since one Cooley Node has 12 \glspl{cpu} we just needed 1 node in order to run 1, 2, 4 or 8 processes, 2 nodes (24 \glspl{cpu}) in order to run 16 processes, 3 nodes (36 \glspl{cpu}) in order to run 32 processes and finally 6 nodes (72 \glspl{cpu}) in order to run 64 processes.
 
-Another issue to take into account is that to make this code scale in the way showed by the chart, all the corpora have to have the same size, otherwise--and since the code distributes corporas on different processes in static way--some processes which took over smaller corpora would have finished before other processes that took over larger corpora and would have wasted processing power waiting idly for other processes to finish. We have to think in a way to make the distribution of vocabularies on processes dynamic--such as \gls{omp} dynamic schedule. Nevertheless, trying to balance the load among the different \gls{mpi} ranks could produce a severe degradation of Efficiency originated in the increased \gls{ipc} load that such techniques require~\cite{hu2012biophysically}.
+%Nevertheless, we have to take into account that each process produces an independent set of corpora and does not need to transmit any data to other processes in the \gls{mpi} session. Then, we did not have \gls{ipc} issues in this code (this is pure parallelization, also called \emph{Embarrassingly parallel}~\cite{noauthor_embarrassingly_2018}).
 
-In Fig.~\ref{fig:CorporaGenerationScaling} down-left we can see that the minimum Strong Scaling Efficiency is well above the 75\%.  
+Something to take into account is that to make this code scale in the way showed by the chart, all the corpora have to have the same size, otherwise--and since the code distributes corporas on different processes in static way--some processes which took over smaller corpora would have finished before other processes that took over larger corpora and would have wasted processing power waiting idly for other processes to finish. We have to think in a way to make the distribution of vocabularies on processes dynamic--such as \gls{omp} dynamic schedule. Nevertheless, trying to balance the load among the different \gls{mpi} ranks could produce a severe degradation of Efficiency originated in the increased \gls{ipc} load that such techniques require~\cite{hu2012biophysically}.
 
-In reference to Weak scaling (Fig.~\ref{fig:CorporaGenerationScaling} upper-right), we generated one corpus per process using one corpus for one \gls{mpi} rank, two corpora for two \gls{mpi} ranks and so on. The horizontal line in the figure shows that this code scales well  in terms of weak scaling too and--as Fig.~\ref{fig:CorporaGenerationScaling} down-right shows--the Weak Scaling Efficiency of the code was never below the 70\%.
+In Fig.~\ref{sub:Corpora_Strong_Scaling_Efficiency} we can see that the minimum Strong Scaling Efficiency is well above the 75\%.
+
+In reference to Weak scaling (Fig.~\ref{sub:Corpora_Weak_Scaling})--as before--the problem workload assigned to each processing element stays constant and additional elements are used to solve a larger total problem (i.e. as we add more \glspl{cpu} we add more corpora in a way that one corpus is generated by \gls{cpu}). We generated one corpus per process using one corpus for one \gls{mpi} rank, two corpora for two \gls{mpi} ranks and so on. The bars shown in Fig.~\ref{sub:Corpora_Weak_Scaling} depict that this code scales well in terms of weak scaling too and--as Fig.~\ref{sub:Corpora_Weak_Scaling_Efficiency} shows--the Weak Scaling Efficiency of the code was never below the 70\%.
 
 
 
