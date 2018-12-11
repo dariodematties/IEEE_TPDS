@@ -811,6 +811,7 @@ The \glsfirst{ssom} class implements proximal connections, the \glsfirst{dsom} c
 
 
 \subsubsection{\glsfirst{el} Parallelization}
+\label{EL_Parallelization}
 
 We parallelized the \gls{el} class by means of a hybrid \gls{mpi}+\gls{omp} paradigm distributing \glspl{csom} among \gls{mpi} ranks as a deck of cards is distributed among different players. Each \gls{mpi} rank ends up with one or more \glspl{csom} and the \glspl{csom} in each rank are distributed among different \gls{omp} threads (Fig. \ref{fig:Encoder_Parallelization} and Alg.~\ref{ccs_distribution}).
 
@@ -1148,6 +1149,7 @@ Figs.~\ref{sub:EL_Strong_Scaling_Left} and~\ref{sub:EL_Strong_Scaling1_Left} sho
 
 
 \subsection{\glsfirst{mrstsa} Scaling Tests}
+\label{MRSTSA_Scaling_Tests}
 
 We tested the scaling capacity of this code on Cooley nodes. In terms of Strong scaling, we run the algorithm in order to process 64 corpora--one corpus per vocabulary. Fig.~\ref{sub:MRSTSA_Strong_Scaling} shows a really good scaling of this code. The problem size stays fixed--64 corpora processing by means of \gls{mrstsa} algorithm--but the number of processing elements are increased.
 
@@ -1263,9 +1265,18 @@ In reference to Weak scaling (Fig.~\ref{sub:Corpora_Weak_Scaling})--as before--t
 
 
 \section{Discussion}
-The discussion goes here.
 
+In this paper we show how parallelization strategies with great independence on data coalescence scale efficiently on distributed memory systems while running biologically inspired computational models with highly sparse and random connectivity profiles.
 
+Algorithmic implementations strongly based on \gls{simd} parallel computing architectures, impose important restrictions on memory data alignment. \gls{omp} threads in shared memory systems are instead highly independent and powerful processing abstractions which can perform complex task with eventual vectorization optimizations when possible.
+
+Our findings show that the parallelization strategies used in this work present good and robust scaling efficiency even in front of intensive \gls{ipc} loads. Such behavior can be kept in a sustained manner as long as a minimum of balance in the computational load among different threads remains. In section~\ref{MRSTSA_Scaling_Tests} we showed very high scaling efficiencies. Yet, we warned about difficulties in front of a context with uneven corpus sizes. Achieving load balance in distributed memory systems is extremely expensive given the amount of \gls{ipc} overload needed. In this manner, we claim that the best way to balance computational load among computing elements is to try to confine as much computational load as possible in a shared memory unit without exceeding the concurrent threading or hyperthreading capacity provided by a node. Once such conditions are satisfied it is relatively straightforward to spawn a bunch of threads in which the work could be distributed. Once in a shared memory system, \gls{omp} threads are much lighter that \gls{mpi} processes since threads do not duplicate heap nor program and they do not need complex communication methos to share data. Furthermore, \gls{omp} threads can manage load balancing efficiently and automatically since \gls{omp} manages dynamic parallel schedule for you. In \gls{mpi} the programmer has to manage load balancing using intensive \gls{ipc} which is highly expensive especially when the communication is carried out among processes in different nodes. On the other side \gls{omp} threads suffer from false shearing in the \glspl{cpu} caches, but with a highly flexible parallelization scheme as the one used in section \ref{EL_Parallelization} the user can flexibly vary the parallelization granularity as to achieve the best performance avoiding that each thread exceeds the quota of cache memory available in each \gls{cpu}.
+
+In section~\ref{EL_Parallelization} some problems could arise when a single \gls{cc} is too large to share a computing node with many others. If just 2 \glspl{cc} could fit in a node, the parallelization granularity would be very poor, but \gls{omp} is highly versatile and can easily manage nested threading. In such case we could vary the parallelization granularity in an extremely accessible manner with all the advantages of \gls{omp} in terms of dynamic load balancing. This nested parallelization strategy could be applied in section~\ref{MRSTSA_Scaling_Tests} in front of an eventual unbalanced computational load from a uneven corpora size distribution. 
+
+This scenario in which the computational burden assigned to each shared memory system is distributed among a set of highly lightweight, flexible and dynamic \gls{omp} threads is really favorable in a context in which the number of \glspl{cpu} shearing memory increases specially in high-end supercomputers. In such respect and in front of the good results returned by our experiments we evaluate as viable the implementation of these parallelization strategies in high end supercomputers in the future.
+
+We claim thus that this work introduces parallelization strategies whose flexibility and robustness are particularly useful in overly variable and biologically inspired computational scientific scenarios whose modelization approaches can vary dramatically in different biologically accurate implementations strategies in which there are erratic network structures with highly sparse and random connectivity profiles.
 
 
 
