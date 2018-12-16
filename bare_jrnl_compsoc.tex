@@ -346,6 +346,27 @@
 
 
 
+% *** dirtytalk ***
+% This is a very small LaTeX package with only one available command: \say, shown in the next example:
+
+%\documentclass{article}
+%\usepackage[utf8]{inputenc}
+%\usepackage{dirtytalk}
+ 
+%\begin{document}
+%\section{Introduction}
+ 
+%Typing quotations with this package is quite easy:
+ 
+%\say{Here, a quotation is written and even some \say{nested} quotations 
+%are possible}
+ 
+%\end{document}
+\usepackage{dirtytalk}
+
+
+
+
 % *** PDF, URL AND HYPERLINK PACKAGES ***
 %
 \usepackage{url}
@@ -595,7 +616,7 @@ Regarding software for computational modeling implementation, in the last years,
 
 The first reason is that these frameworks enable to easily deal and work with big computational graphs without worrying about all those bookkeeping details. The second reason is that whenever working in \gls{dl} it will be always necessary to compute gradients, i.e. to compute some loss and then to compute the gradients about weights with respect to the loss. It would be better to make these operations as automated as possible. After all, nobody wants to struggle writing such code. Everyone wants the framework to handle all these backpropagation details. So the common scenario is writing only the forward pass of the network and having the backward pass sort of free without any significant addition to the code. Finally it is desirable to have all this stuff running efficiently on \glspl{gpu} so nobody have to worry too much about those low level hardware details such as cuBLAS and cuDNN packages in \gls{cuda}, moving data between the \gls{cpu} and the \gls{gpu}, etc. Everybody can keep all those messy details hidden by these tools which take care of them.
 
-With those essential points in mind, we had to consider important aspects to take into account in order to pursue the implementation of our computational model. Firstly, the biological plausibility of our model freesed us from the need to compute gradients. Even though there exist important works supporting the idea that backpropagation could be a phenomenon happening in cortical tissue~\cite{Guerguiev2017TowardsDL}, we think that there is not enough evidence as to include so complex mechanism in our model yet. Instead, we decided to be conservative in that respect. Secondly, \gls{dl} frameworks are mainly biased towards \gls{gpu} parallelization on \gls{cuda} cores. Albeit those frameworks have been extremely optimized to take the maximum advantage especially from NVIDIA cards, too many conditions has to be satisfied in order to get the best performance. Although such frameworks have made an outstanding progress in the last years together with the development of their complementary hardware, we glimpsed an acute specialization of such technologies towards the precise development of certain \gls{dl} frameworks with little room for innovative and specifically biologically plausible implementations. In that sense, one of the biggest problems in such approaches arise when trying to implement neural populations with sparse or random connectivity structures. Those implementations--strongly demanded in biologically plausible modelling--compromise coalescence in \gls{gpu} cards and seriously impairs performance~\cite{doi:10.3109/0954898X.2012.739292}.
+With those essential points in mind, we had to consider important aspects to take into account in order to pursue the implementation of our computational model. Firstly, the biological plausibility of our model freesed us from the need to compute gradients. Even though there exist important works supporting the idea that \emph{credit assignament}--the ultimate goal of backpropagation--could be a phenomenon happening in cortical tissue~\cite{Guerguiev2017TowardsDL}, we pondered that it is unknown that \emph{teaching signals} could exist in the brain and there is not enough evidence as to include so complex mechanism in our model yet. Instead, we decided to be conservative in that respect. Secondly, \gls{dl} frameworks are mainly biased towards \gls{gpu} parallelization on \gls{cuda} cores. Albeit those frameworks have been extremely optimized to take the maximum advantage especially from NVIDIA cards, too many conditions has to be satisfied in order to get the best performance. Although such frameworks have made an outstanding progress in the last years together with the development of their complementary hardware, we glimpsed an acute specialization of such technologies towards the precise development of certain \gls{dl} frameworks with little room for innovative and specifically biologically plausible implementations. In that sense, one of the biggest problems in such approaches arise when trying to implement neural populations with sparse or random connectivity structures. Those implementations--strongly demanded in biologically plausible modelling--compromise coalescence in \gls{gpu} cards and seriously impairs performance~\cite{doi:10.3109/0954898X.2012.739292}.
 
 Following this line, we implemented our model in \CC14 using \gls{oop} paradigm and parallelized it by means of a hybrid strategy using \gls{mpi} and \gls{omp}. The \gls{oop} paradigm gave us a powerful tool to compose modular structures allowing the manage of complex computational graphs. \gls{mpi} enabled our model to run in distributed memory systems in a coherent and stable way and \gls{omp} provided the fine grained distribution of the workload inside each compute node with the option to schedule the \gls{omp} threads dynamically, to manage different options of thread affinity and to vary the number of threads in each compute node among other options. Finally, the use of \gls{stl} containers with the header \texttt{<algorithm>} which defines a collection of functions especially designed to be used on ranges of elements, provided our implementation with \gls{simd} vector parallelization in each thread.
 
@@ -813,20 +834,20 @@ The \glsfirst{ssom} class implements proximal connections, the \glsfirst{dsom} c
 \subsubsection{\glsfirst{el} Parallelization}
 \label{EL_Parallelization}
 
-We parallelized the \gls{el} class by means of a hybrid \gls{mpi}+\gls{omp} paradigm distributing \glspl{csom} among \gls{mpi} ranks as a deck of cards is distributed among different players. Each \gls{mpi} rank ends up with one or more \glspl{csom} and the \glspl{csom} in each rank are distributed among different \gls{omp} threads (Fig. \ref{fig:Encoder_Parallelization} and Alg.~\ref{ccs_distribution}).
+We parallelized the \gls{el} class by means of a hybrid \gls{mpi}+\gls{omp} paradigm distributing \glspl{csom} among \gls{mpi} ranks as a deck of cards is distributed among different players. Each \gls{mpi} rank ends up with one or more \glspl{csom} and the \glspl{csom} in each rank are distributed among different \gls{omp} threads (Fig. \ref{fig:Encoder_Parallelization}).% and Alg.~\ref{ccs_distribution}).
 
-\begin{algorithm}
-	\caption{This algorithm distributes \glspl{cc} among \gls{mpi} processes in a distributed memory system and the \glspl{cc} in each process are distributed among \gls{omp} threads in a shared memory system. In this algorithm we run one \gls{mpi} process per compute node on Cooley.}
-\label{ccs_distribution}
-\begin{algorithmic}[1]
-	\STATE {\texttt{numberOfProcesses} = getNumberOfProcesses()}
-	\STATE {\texttt{processNumber} = getProcessNumber()}
-	\STATE {\#\textbf{pragma omp parallel for} default(none) shared(\texttt{processNumber}, \texttt{numberOfProcesses})}
-	\FOR{\texttt{column} = \texttt{processNumber} \TO \texttt{column} = number of \glspl{cc}; \texttt{column} += \texttt{numberOfProcesses}}
-	\STATE {Do \gls{csom} stuff...}
-	\ENDFOR
-\end{algorithmic}
-\end{algorithm}
+%\begin{algorithm}
+	%\caption{This algorithm distributes \glspl{cc} among \gls{mpi} processes in a distributed memory system and the \glspl{cc} in each process are distributed among \gls{omp} threads in a shared memory system. In this algorithm we run one \gls{mpi} process per compute node on Cooley.}
+%\label{ccs_distribution}
+%\begin{algorithmic}[1]
+	%\STATE {\texttt{numberOfProcesses} = getNumberOfProcesses()}
+	%\STATE {\texttt{processNumber} = getProcessNumber()}
+	%\STATE {\#\textbf{pragma omp parallel for} default(none) shared(\texttt{processNumber}, \texttt{numberOfProcesses})}
+	%\FOR{\texttt{column} = \texttt{processNumber} \TO \texttt{column} = number of \glspl{cc}; \texttt{column} += \texttt{numberOfProcesses}}
+	%\STATE {Do \gls{csom} stuff...}
+	%\ENDFOR
+%\end{algorithmic}
+%\end{algorithm}
 
 \begin{figure}[h!]
     \centering
@@ -877,48 +898,59 @@ In this work, each \gls{mpi} rank runs in a diferent Cooley node and keeps all t
 
 \subsection{\gls{mrstsa} Implementation}
 
-We implemented the \gls{mrstsa} algorithm in C using the package FFTW~\cite{fftw} which is an implementation of the \gls{fft} available on Cooley. We used \gls{mpi}+\gls{omp} hybrid parallelization approach. We parallelized the \gls{mrstsa} algorithm developed in \cite{Dematties2018} by means of \gls{omp} sections using one \gls{omp} section per spectral resolution and running until 5 \gls{omp} threads per Cooley node (Alg. ~\ref{MRSTSA_parallelization}). In terms of \gls{mpi} we processed a set of corpora per \gls{mpi} rank. The algorithm generates certain number of corpora per vocabulary. Supposing that we have $n$ vocabularies and $m$ corpora per vocabulary, we end up with $n m$ corpora. Unlike the corpora generation parallelization algorithm exposed in Alg.~\ref{fig:CorporaGenerationParallelization} and explained in section~\ref{CorpGenImp} in this case we unroll the nested loop that iterates through corpora and vocabularies. The \gls{mpi} parallelization is exposed in Alg~\ref{input_generation_parallelization}
+We implemented the \gls{mrstsa} algorithm in C using the package FFTW~\cite{fftw} which is an implementation of the \gls{fft} available on Cooley. We used \gls{mpi}+\gls{omp} hybrid parallelization approach. We parallelized the \gls{mrstsa} algorithm developed in \cite{Dematties2018} by means of \gls{omp} sections using one \gls{omp} section per spectral resolution and running until 5 \gls{omp} threads per Cooley node (Fig.~\ref{sub:MRSTSA_Parallelization}). In terms of \gls{mpi} we processed a set of corpora per \gls{mpi} rank. The algorithm generates certain number of corpora per vocabulary. Supposing that we have $n$ vocabularies and $m$ corpora per vocabulary, we end up with $n m$ corpora. Unlike the corpora generation parallelization algorithm exposed in Alg.~\ref{fig:CorporaGenerationParallelization} and explained in section~\ref{CorpGenImp} in this case we unroll the nested loop that iterates through corpora and vocabularies. The \gls{mpi} parallelization is exposed in Fig.~\ref{sub:MRSTSA_ALG}.
 
-\begin{algorithm}
-	\caption{This algorithm is called \gls{mrstsa} and distributes the different spectral resolutions--processing a corpus--among \gls{omp} threads running until 5 \gls{omp} threads concurrently in order to generate such corpus processing.}
-\label{MRSTSA_parallelization}
-\begin{algorithmic}[1]
-	\STATE {\#\bf{pragma omp parallel sections}}
-	\STATE {~~\#\bf{pragma omp section}}
-	\STATE {~~~~Do stuff...}
-	\STATE {~~\#\bf{pragma omp section}}
-	\STATE {~~~~Do stuff...}
-	\STATE {~~\#\bf{pragma omp section}}
-	\STATE {~~~~Do stuff...}
-	\STATE {~~\#\bf{pragma omp section}}
-	\STATE {~~~~Do stuff...}
-	\STATE {~~\#\bf{pragma omp section}}
-	\STATE {~~~~Do stuff...}
-\end{algorithmic}
-\end{algorithm}
+%\begin{algorithm}
+	%\caption{This algorithm is called \gls{mrstsa} and distributes the different spectral resolutions--processing a corpus--among \gls{omp} threads running until 5 \gls{omp} threads concurrently in order to generate such corpus processing.}
+%\label{MRSTSA_parallelization}
+%\begin{algorithmic}[1]
+	%\STATE {\#\bf{pragma omp parallel sections}}
+	%\STATE {~~\#\bf{pragma omp section}}
+	%\STATE {~~~~Do stuff...}
+	%\STATE {~~\#\bf{pragma omp section}}
+	%\STATE {~~~~Do stuff...}
+	%\STATE {~~\#\bf{pragma omp section}}
+	%\STATE {~~~~Do stuff...}
+	%\STATE {~~\#\bf{pragma omp section}}
+	%\STATE {~~~~Do stuff...}
+	%\STATE {~~\#\bf{pragma omp section}}
+	%\STATE {~~~~Do stuff...}
+%\end{algorithmic}
+%\end{algorithm}
 
-\begin{algorithm}
-	\caption{This algorithm distributes corpora among \gls{mpi} processes and each \gls{mpi} process run until 5 \gls{omp} threads concurrently in order to generate each corpus. In this algorithm we run one \gls{mpi} process per Cooley node.}
-\label{input_generation_parallelization}
-\begin{algorithmic}[1]
-	\STATE {\texttt{numberOfProcesses} = getNumberOfProcesses()}
-	\STATE {\texttt{processNumber} = getProcessNumber()}
-	\FOR{\texttt{task} = 0 \TO \texttt{task} = \texttt{numberOfVocabularies} * \texttt{numberOfCorpora}}
-		\STATE {\texttt{corpus} = (\texttt{int})\texttt{task}/\texttt{numberOfVocabularies}}
-		\STATE {\texttt{vocabulary} = \texttt{task}\%\texttt{numberOfVocabularies}}
-		\STATE {MRSTSA(\texttt{corpus}, \texttt{vocabulary})}
-	\ENDFOR
-\end{algorithmic}
-\end{algorithm}
+%\begin{algorithm}
+	%\caption{This algorithm distributes corpora among \gls{mpi} processes and each \gls{mpi} process run until 5 \gls{omp} threads concurrently in order to generate each corpus. In this algorithm we run one \gls{mpi} process per Cooley node.}
+%\label{input_generation_parallelization}
+%\begin{algorithmic}[1]
+	%\STATE {\texttt{numberOfProcesses} = getNumberOfProcesses()}
+	%\STATE {\texttt{processNumber} = getProcessNumber()}
+	%\FOR{\texttt{task} = 0 \TO \texttt{task} = \texttt{numberOfVocabularies} * \texttt{numberOfCorpora}}
+		%\STATE {\texttt{corpus} = (\texttt{int})\texttt{task}/\texttt{numberOfVocabularies}}
+		%\STATE {\texttt{vocabulary} = \texttt{task}\%\texttt{numberOfVocabularies}}
+		%\STATE {MRSTSA(\texttt{corpus}, \texttt{vocabulary})}
+	%\ENDFOR
+%\end{algorithmic}
+%\end{algorithm}
 
 The complete parallelization scheme is depicted in Fig.~\ref{fig:MRSTSA_Parallelization}. Corpora are distributed among \gls{mpi} ranks as a deck of cards is distributed among players. Each \gls{mpi} rank ends up with a set of corpora which it processes one at a time--sequentially. Each corpus processing runs 5 \gls{omp} threads concurrently in order to process the spectral resolutions of the corpus. 
 
-\begin{figure}[h!]
+\begin{figure*}[tb] 
     \centering
-    \includegraphics[width=0.4\textwidth]{MRSTSA_Parallelization.png}
-    \caption{Parallelization scheme for the \gls{mrstsa}. Ten corpora processing are distributed among \gls{mpi} ranks. Each rank processes one corpus at a time sequentially but each corpus spectral resolution is processed concurrently by means of \gls{omp} threads.}
-    \label{fig:MRSTSA_Parallelization}
-\end{figure}
+  \subfloat[This algorithm distributes corpora among \gls{mpi} processes and each \gls{mpi} process run until 5 \gls{omp} threads concurrently in order to generate each corpus.\label{sub:MRSTSA_ALG}]{%
+       \includegraphics[width=0.49\linewidth]{MRSTSA_ALG.png}}
+    \hfill
+  \subfloat[Ten corpora processing are distributed among \gls{mpi} ranks. Each rank processes one corpus at a time sequentially but each corpus spectral resolution is processed concurrently by means of \gls{omp} threads.\label{sub:MRSTSA_Parallelization}]{%
+        \includegraphics[width=0.49\linewidth]{MRSTSA_Parallelization.png}}
+	\caption{Parallelization scheme for the \gls{mrstsa}. In this algorithm we run one \gls{mpi} process per Cooley node. The \gls{mrstsa} algorithm distributes the different spectral resolutions--processing a corpus--among \gls{omp} threads running until 5 \gls{omp} threads concurrently in order to generate such corpus processing.}
+  \label{fig:MRSTSA_Parallelization} 
+\end{figure*}
+
+%\begin{figure}[h!]
+    %\centering
+    %\includegraphics[width=0.4\textwidth]{MRSTSA_Parallelization.png}
+    %\caption{Parallelization scheme for the \gls{mrstsa}. Ten corpora processing are distributed among \gls{mpi} ranks. Each rank processes one corpus at a time sequentially but each corpus spectral resolution is processed concurrently by means of \gls{omp} threads.}
+    %\label{fig:MRSTSA_Parallelization}
+%\end{figure}
 
 
 
@@ -939,30 +971,41 @@ The complete parallelization scheme is depicted in Fig.~\ref{fig:MRSTSA_Parallel
 
 We generated corpora with randomly chosen English mono and multisyllabic words~\cite{Dematties2018} using \gls{festival} Synthesis \cite{festival2014}. To that end, we generated cross synthesizer standard mark up language SABLE \cite{sable} files. In those files, we instructed \gls{festival} to generate audio \texttt{wav} files with the corpora uttered by different voices available from the synthesizer.
 
-All the code that generates the corpora is implemented in Python and parallelized by means of a \gls{mpi} for Python package called \texttt{mpi4py}. The algorithmic implementation of this parallelization is shown in Alg.~\ref{corpora_generation_parallelization} and Fig.~\ref{fig:CorporaGenerationParallelization}.
+All the code that generates the corpora is implemented in Python and parallelized by means of a \gls{mpi} for Python package called \texttt{mpi4py}. The algorithmic implementation of this parallelization is shown in Fig.~\ref{fig:CorporaGenerationParallelization}.
 
-\begin{algorithm}
-	\caption{This algorithm distributes vocabularies among \gls{mpi} processes. In this algorithm we run one \gls{mpi} process per \gls{cpu} on Cooley.}
-\label{corpora_generation_parallelization}
-\begin{algorithmic}[1]
-	\STATE {\texttt{numberOfProcesses} = getNumberOfProcesses()}
-	\STATE {\texttt{processNumber} = getProcessNumber()}
-	\FOR{\texttt{vocabulary} = 0 \TO \texttt{vocabulary} = \texttt{numberOfVocabularies}}
-		\IF{\texttt{corpus}\%\texttt{numberOfProcesses}==\texttt{processNumber}}
-			\FOR{\texttt{corpus} = 0 \TO \texttt{corpus} = \texttt{numberOfCorpora}}
-				\STATE {Call \gls{festival} to generate an audio file from this \texttt{corpus} from this \texttt{vocabulary}...}
-			\ENDFOR
-		\ENDIF
-	\ENDFOR
-\end{algorithmic}
-\end{algorithm}
+%\begin{algorithm}
+	%\caption{This algorithm distributes vocabularies among \gls{mpi} processes. In this algorithm we run one \gls{mpi} process per \gls{cpu} on Cooley.}
+%\label{corpora_generation_parallelization}
+%\begin{algorithmic}[1]
+	%\STATE {\texttt{numberOfProcesses} = getNumberOfProcesses()}
+	%\STATE {\texttt{processNumber} = getProcessNumber()}
+	%\FOR{\texttt{vocabulary} = 0 \TO \texttt{vocabulary} = \texttt{numberOfVocabularies}}
+		%\IF{\texttt{corpus}\%\texttt{numberOfProcesses}==\texttt{processNumber}}
+			%\FOR{\texttt{corpus} = 0 \TO \texttt{corpus} = \texttt{numberOfCorpora}}
+				%\STATE {Call \gls{festival} to generate an audio file from this \texttt{corpus} from this \texttt{vocabulary}...}
+			%\ENDFOR
+		%\ENDIF
+	%\ENDFOR
+%\end{algorithmic}
+%\end{algorithm}
 
-\begin{figure}[h!]
+\begin{figure*}[tb] 
     \centering
-    \includegraphics[width=0.4\textwidth]{CorporaGenerationParallelization.png}
-    \caption{Distribution of corpora generation among Python \gls{mpi} ranks. The corpora generation tasks are distributed among Python \gls{mpi} ranks as a deck of cards is distributed among players. Each \gls{mpi} rank will end up with a set of vocabularies to generate the corpora corresponding to such vocabularies (i.e. if we have 10 corpora per vocabulary, rank 0 will end up generating 40 corpora serially while ranks 1 and 2 will generate 30 corpora each serially.}
-    \label{fig:CorporaGenerationParallelization}
-\end{figure}
+  \subfloat[This algorithm distributes vocabularies among \gls{mpi} processes. In this algorithm we run one \gls{mpi} process per \gls{cpu} on Cooley.\label{sub:Corpora_Generation_ALG}]{%
+       \includegraphics[width=0.49\linewidth]{Corpora_Generation_ALG.png}}
+    \hfill
+  \subfloat[Each \gls{mpi} rank will end up with a set of vocabularies to generate the corpora corresponding to such vocabularies (i.e. if we have 10 corpora per vocabulary, rank 0 will end up generating 40 corpora serially while ranks 1 and 2 will generate 30 corpora each serially.\label{sub:CorporaGenerationParallelization}]{%
+        \includegraphics[width=0.49\linewidth]{CorporaGenerationParallelization.png}}
+	\caption{Parallelization scheme for the Corpora Generation Process. This is a distribution of corpora generation among Python \gls{mpi} ranks. The corpora generation tasks are distributed among Python \gls{mpi} ranks as a deck of cards is distributed among players.}
+  \label{fig:CorporaGenerationParallelization} 
+\end{figure*}
+
+%\begin{figure}[h!]
+    %\centering
+    %\includegraphics[width=0.4\textwidth]{CorporaGenerationParallelization.png}
+    %\caption{Distribution of corpora generation among Python \gls{mpi} ranks. The corpora generation tasks are distributed among Python \gls{mpi} ranks as a deck of cards is distributed among players. Each \gls{mpi} rank will end up with a set of vocabularies to generate the corpora corresponding to such vocabularies (i.e. if we have 10 corpora per vocabulary, rank 0 will end up generating 40 corpora serially while ranks 1 and 2 will generate 30 corpora each serially.}
+    %\label{fig:CorporaGenerationParallelization}
+%\end{figure}
 
 
 
@@ -1016,9 +1059,9 @@ Fig. \ref{fig:EL_Strong_Scaling} shows the strong scaling capacity of our code i
   \subfloat[Run time vs. the number of nodes for different number of threads per node.\label{sub:EL_Strong_Scaling1_Left}]{%
        \includegraphics[width=0.49\linewidth]{EL_Strong_Scaling1_Left.png}}
     \hfill
-  \subfloat[Efficiency vs. the number of nodes for different numbers of threads per node. Reference is taken from 8 computing nodes ahead.\label{sub:EL_Strong_Scaling1_Right}]{%
+    \subfloat[Efficiency vs. the number of nodes for different numbers of threads per node. Race line (reference) is taken at 8 computing nodes.\label{sub:EL_Strong_Scaling1_Right}]{%
         \includegraphics[width=0.49\linewidth]{EL_Strong_Scaling1_Right.png}}
-	\caption{Strong scaling tests of the \gls{el} algorithm on Cooley nodes.}
+	\caption{Strong scaling tests of the \gls{el} algorithm on Cooley nodes. Each \gls{mpi} rank runs in a different node with 1, 2, 4 and 8 \gls{omp} threads running in each rank.}
   \label{fig:EL_Strong_Scaling} 
 \end{figure*}
 
@@ -1113,7 +1156,7 @@ Fig.~\ref{fig:EL_Weak_Scaling} shows the weak scaling performance of the model. 
   \subfloat[Efficiency vs. the number of nodes for different numbers of threads per node.\label{sub:EL_Weak_Scaling_Right}]{%
         \includegraphics[width=0.49\linewidth]{EL_Weak_Scaling_Right.png}}
 
-	\caption{Weak scaling tests of the \gls{el} algorithm on Cooley nodes.}
+	\caption{Weak scaling tests of the \gls{el} algorithm on Cooley nodes. Each \gls{mpi} rank runs in a different node with 1, 2, 4 and 8 \gls{omp} threads running in each rank.}
   \label{fig:EL_Weak_Scaling} 
 \end{figure*}
 
@@ -1166,7 +1209,7 @@ We tested the scaling capacity of this code on Cooley nodes. In terms of Strong 
     \hfill
   \subfloat[Efficiency vs. the number of nodes for 5 threads per node.\label{sub:MRSTSA_Weak_Scaling_Efficiency}]{%
         \includegraphics[width=0.49\linewidth]{MRSTSA_Weak_Scaling_Efficiency.png}}
-	\caption{Strong and Weak scaling tests of the \gls{mrstsa} algorithm on Cooley nodes.}
+	\caption{Strong and Weak scaling tests of the \gls{mrstsa} algorithm on Cooley nodes. Each \gls{mpi} rank runs in a different node with 1, 2, 4 and 5 \gls{omp} threads running in each rank.}
   \label{fig:MRSTSA_Scaling} 
 \end{figure*}
 
@@ -1223,18 +1266,18 @@ In terms of Strong and Weak scaling (Fig.~\ref{fig:Corpora_Scaling}), we ran the
 
 \begin{figure*}[tb] 
     \centering
-  \subfloat[Strong Scaling. Run time vs. the number of \glspl{cpu}.\label{sub:Corpora_Strong_Scaling}]{%
+  \subfloat[Run time vs. the number of \glspl{cpu}.\label{sub:Corpora_Strong_Scaling}]{%
        \includegraphics[width=0.49\linewidth]{Corpora_Strong_Scaling.png}}
     \hfill
-  \subfloat[Weak scaling. Run time vs. the number of \glspl{cpu}.\label{sub:Corpora_Weak_Scaling}]{%
+  \subfloat[Run time vs. the number of \glspl{cpu}.\label{sub:Corpora_Weak_Scaling}]{%
 	\includegraphics[width=0.49\linewidth]{Corpora_Weak_Scaling.png}}
 \\
-  \subfloat[Strong Scaling. Efficiency vs. the number of \glspl{cpu}.\label{sub:Corpora_Strong_Scaling_Efficiency}]{%
+  \subfloat[Efficiency vs. the number of \glspl{cpu}.\label{sub:Corpora_Strong_Scaling_Efficiency}]{%
        \includegraphics[width=0.49\linewidth]{Corpora_Strong_Scaling_Efficiency.png}}
     \hfill
-  \subfloat[Weak scaling. Efficiency vs. the number of \glspl{cpu}.\label{sub:Corpora_Weak_Scaling_Efficiency}]{%
+  \subfloat[Efficiency vs. the number of \glspl{cpu}.\label{sub:Corpora_Weak_Scaling_Efficiency}]{%
 	\includegraphics[width=0.49\linewidth]{Corpora_Weak_Scaling_Efficiency.png}}
-  \caption{Strong and Weak scaling test of Corpora Generation on Cooley nodes. Since Cooley nodes have 12 \glspl{cpu} we had to ask for 2 nodes in order to run on 16 \glspl{cpu}, 3 nodes in order to run on 32 \glspl{cpu} and 6 nodes in order to run on 64 \glspl{cpu}.}
+	\caption{Strong and Weak scaling test of Corpora Generation on Cooley nodes. Each Python \gls{mpi} rank runs in a different \gls{cpu}. Since Cooley nodes have 12 \glspl{cpu} we had to ask for 2 nodes in order to run on 16 \glspl{cpu}, 3 nodes in order to run on 32 \glspl{cpu} and 6 nodes in order to run on 64 \glspl{cpu}.}
   \label{fig:Corpora_Scaling} 
 \end{figure*}
 
@@ -1270,7 +1313,9 @@ In this paper we show how parallelization strategies with great independence on 
 
 Algorithmic implementations strongly based on \gls{simd} parallel computing architectures, impose important restrictions on memory data alignment. \gls{omp} threads in shared memory systems are instead highly independent and powerful processing abstractions which can perform complex task with eventual vectorization optimizations when possible.
 
-Our findings show that the parallelization strategies used in this work present good and robust scaling efficiency even in front of intensive \gls{ipc} loads. Such behavior can be kept in a sustained manner as long as a minimum of balance in the computational load among different threads remains. In section~\ref{MRSTSA_Scaling_Tests} we showed very high scaling efficiencies. Yet, we warned about difficulties in front of a context with uneven corpus sizes. Achieving load balance in distributed memory systems is extremely expensive given the amount of \gls{ipc} overload needed. In this manner, we claim that the best way to balance computational load among computing elements is to try to confine as much computational load as possible in a shared memory unit without exceeding the concurrent threading or hyperthreading capacity provided by a node. Once such conditions are satisfied it is relatively straightforward to spawn a bunch of threads in which the work could be distributed. Once in a shared memory system, \gls{omp} threads are much lighter that \gls{mpi} processes since threads do not duplicate heap nor program and they do not need complex communication methos to share data. Furthermore, \gls{omp} threads can manage load balancing efficiently and automatically since \gls{omp} manages dynamic parallel schedule for you. In \gls{mpi} the programmer has to deal with load balancing using intensive \gls{ipc} which is highly expensive especially when the communication is carried out among processes in different nodes. On the other side \gls{omp} threads suffer from false shearing in the \glspl{cpu} caches, but with a highly flexible parallelization scheme as the one used in section \ref{EL_Parallelization} the user can flexibly vary the parallelization granularity as to achieve the best performance avoiding that each thread exceeds the quota of cache memory available in each \gls{cpu}.
+Our findings show that the parallelization strategies used in this work present good and robust scaling efficiency even in front of intensive \gls{ipc} loads. Such behavior can be kept in a sustained manner as long as a minimum of balance in the computational load among different threads remains. In section~\ref{MRSTSA_Scaling_Tests} we showed very high scaling efficiencies. Yet, we warned about difficulties in front of a context with uneven corpus sizes. Achieving load balance in distributed memory systems is extremely expensive given the amount of \gls{ipc} overload needed. In this manner, we claim that the best way to balance computational load among computing elements is to try to confine as much computational load as possible in a shared memory unit without far exceeding the concurrent threading or hyperthreading capacity provided by a node. Once such conditions are satisfied it is relatively straightforward to spawn a bunch of threads in which the work could be distributed. Once in a shared memory system, \gls{omp} threads are much lighter that \gls{mpi} processes since threads do not duplicate heap nor program and they do not need complex communication methos to share data. Furthermore, \gls{omp} threads can manage load balancing efficiently and automatically since \gls{omp} manages dynamic parallel schedule for you. This is highly desirable specially in a simulation environment in which individual modules--such as \glspl{cc} in our cortical model--are not uniformly analogous in terms of size and or connectivity. In \gls{mpi} instead, the programmer has to deal with load balancing using intensive \gls{ipc} which is highly expensive especially when the communication is carried out among processes in different nodes. On the other side \gls{omp} threads suffer from false shearing in the \glspl{cpu} caches, but with a highly flexible parallelization scheme as the one used in section \ref{EL_Parallelization} the user can flexibly vary the parallelization granularity as to achieve the best performance avoiding that each thread exceeds the quota of cache memory available in each \gls{cpu}.
+
+In Figs.~\ref{fig:EL_Strong_Scaling}, \ref{fig:EL_Weak_Scaling}, \ref{fig:MRSTSA_Scaling} and \ref{fig:Corpora_Scaling}, the phenomenon of \emph{superlinear-speedup} is present for several cases. In \cite{7733347} the authors pointed out that: \say{Mainly the superlinear speedup performance in persistent algorithms occurs due to the increased cache resources in the parallel computer architectures, the prefetching of shared variables in shared memory organization, or better scheduling in heterogeneous environments. The effects of the shared memory architectures also impact the performance behavior of the granular and scalable algorithms}. We absolutely endorse such statement and consider it sustainable as a general explanation for our case. Nevertheless, we also consider that more in depth analysis of memory utilization using profiling tools will be needed in the future.  
 
 In section~\ref{EL_Parallelization} some problems could arise when a single \gls{cc} is too large to share a computing node with many others. If just 2 \glspl{cc} could fit in a node, the parallelization granularity would be very poor, but \gls{omp} is highly versatile and can easily manage nested threading. In such case we could vary the parallelization granularity in an extremely accessible manner with all the advantages of \gls{omp} in terms of dynamic load balancing. This nested parallelization strategy could be applied in section~\ref{MRSTSA_Scaling_Tests} in front of an eventual unbalanced computational load from an uneven corpora size distribution. 
 
@@ -1398,7 +1443,7 @@ Independence of data coalescence, flexible granularity reconfiguration, dynamica
 
 We consider such features of fundamental importance for the usage of this parallelization procedure in highly variable computational scientific scenarios with irregularly structured datasets typically found in biologically inspired research approaches.
 
-By means of the results returned by this round of test, we consider this parallelization policy as viable to be used in high-end leadership supercomputers in the future.
+By means of the results returned by this round of tests, we esteem this parallelization policy as viable to be used in high-end leadership supercomputers in the future.
 
 
 
