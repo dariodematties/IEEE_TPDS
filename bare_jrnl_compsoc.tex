@@ -413,7 +413,7 @@
 % not capitalized unless they are the first or last word of the title.
 % Linebreaks \\ can be used within to get better formatting as desired.
 % Do not put math or special symbols in the title.
-\title{A Parallelization Strategy for Highly Sparse and Irregular Connectivity Profiles in Biologically-Inspired Computational Models}
+\title{Towards a Parallelization Strategy for Highly Sparse and Irregular Connectivity Profiles in Biologically-Inspired Computational Models}
 %
 %
 % author names and IEEE memberships
@@ -528,14 +528,44 @@ E-mail: silvano@fi.uba.ar}% <-this % stops an unwanted space
 % command as these need to go into the title area created by \maketitle.
 % As a general rule, do not put math, special symbols or citations
 % in the abstract or keywords.
+
+%
+% Note from George: When writing in LaTeX, It is best to put one sentence per line. The reason 
+% is that LaTeX is smart enough to know that a blank line is the end of paragraph. It also makes
+% it easy to see changes in sentence wording, etc.
+% 
+% In our case, we also need to get things in the right order. So by using one sentence per
+% line, you can easily move the sentence to the right place (or even comment it out).
+%
+
+% Saved here just in case...
+% This all seems like detail for the paper, not for the abstract.
+%Nevertheless, the extraordinarily high parallel performance requirements demanded by ongoing applications are channeling development efforts towards very acute computational perspectives.
+%An example of this trend is  deep convolutional neural networks, which employ dense matrix computations.
+%Such computations lend themselves to efficient computation on \gls{gpu} or even neuromorphic chips, which are increasingly prevalent in emerging supercomputers as well.
+%While this specialization trend has improved parallelization efficiency considerably, it has imposed important limitations to alternative, biologically-inspired designs that take a real advantage of such parallelism.
+%and thus are affected by such restrictions, since their algorithms do not necessarily use SIMD-style matrix multiplications and hence data coalescence is seriously impaired in optimized chips.
+%Furthermore, when constructing our model, the parallelization strategy has to be robust enough so that it is not affected by eventual algorithmic modifications.
+%In this paper we introduce a hybrid \gls{mpi} and \gls{omp} parallelization scheme to acclerate and scale our computational model.
+%Our model is directly inspired by the neuroanatomy and physiology of the mammalian cortical tissue.
+
 \IEEEtitleabstractindextext{%
 \begin{abstract}
-Extreme high-end \gls{gpu} cards with its complementary software approaches have conducted a revolution in \gls{ml} and \gls{ai} through the use of \gls{hpc} resources. Nevertheless, the extraordinarily high parallel performance requirements demanded by ongoing applications have funneled the development path towards very acute computational perspectives--such as deep convolutional neural networks. Moreover, there is a clear bias that favours efficient computation of certain matrix operations in \gls{gpu} or even neuromorphic chips, mainly because such operations are very used in convolutional neural networks. This specialization trend has improved parallelization efficiency considerably, but at the same time, it has imposed important limitations to alternative designs in order to take a real advantage of such parallelism. Biologically inspired computational models with sparse and random connectivity profiles--for example--are affected by such restrictions since their algorithms do not necessarily use precisely aligned matrix multiplications and hence data coalescence is seriously impaired in optimized chips. Furthermore, in face of the difficulty in finding the right level of biological plausibility when constructing a model, the parallelization strategy has to be robust enough so that it is not affected by eventual algorithmic modifications. In this paper we introduce a hybrid \gls{mpi} and \gls{omp} parallelization scheme with which we parallelized our computational model inspired by the neuroanatomy and physiology of the mammalian cortical tissue. We ran computational tests on Cooley, a visualization and analysis cluster at Argonne National Laboratory. By means of Strong and Weak scaling assesses we obtained parallel efficiency measures with a minimum above 87\% and a maximum above 97\% for simulations of our biologically inspired neural network on up to 64 computing nodes running 8 threads each. This study provides a set of favourably efficient parallelization strategies to be used in highly flexible and biologically inspired computational experimental setups. In this work we also show the viability in the application of these strategies in high-end leadership computers in the future.
+The interdisciplinary field of neuroscience has made significant progress in recent decades, providing the scientific community in general with a new level of understanding on how the brain works beyond the store-and-fire model found in neural networks.
+Meanwhile, \gls{ml} based on established models has seen a surge of interest in the \gls{hpc} community, especially through the use of high-end accelerators, such as \gls{gpu}s, including \gls{hpc} clusters of same.
+In our work, we are motivated to exploit these high-performance computing developments and understand the scaling challenges for these new learning models on leadership-class HPC resources.
+These emerging models feature sparse and random connectivity profiles that map to more loosely-coupled parallel architectures with a large number of cores per node.
+Contrasted with traditional \gls{ml} codes, these methods exploit loosely-coupled sparse data structures as opposed to tightly-coupled dense matrix computations, which benefit from SIMD-style parallelism found on \gls{gpu}s.
+In this paper we introduce a hybrid \gls{mpi} and \gls{omp} parallelization scheme to acclerate and scale our computational model.
+We ran computational tests on a leadership class visualization and analysis cluster at Argonne National Laboratory.
+We include a study of strong and weak scaling, where we obtained parallel efficiency measures with a minimum above 87\% and a maximum above 97\% for simulations of our biologically inspired neural network on up to 64 computing nodes running 8 threads each.
+This study shows promise of the the MPI+OpenMP hybrid approach to support flexible and biologically-inspired computational experimental setups.
+In this work we also show the viability in the application of these strategies in high-end leadership computers in the future.
 \end{abstract}
 
 % Note that keywords are not normally used for peerreview papers.
 \begin{IEEEkeywords}
-\gls{mpi}, \gls{omp}, \gls{stl} Containers, Biologically Inspired Computational Models
+\gls{mpi}, \gls{omp}, biologically-inspired computational models, neuroscience, irregular computation, sparse computation
 \end{IEEEkeywords}}
 
 
@@ -673,7 +703,7 @@ The measurements of scaling efficiency returned by the tests conducted in this p
 
 \section{Related Work}
 
-
+{\bf Need a proper, introductory paragraph here.}
 
 
 
@@ -742,6 +772,9 @@ In~\cite{hu2012biophysically} the author proposed a parallel implementation of b
 
 
 
+\subsection{RELATED WORK ON BIOLOGICALLY-INSPIRED MODELS}
+
+{\bf This related work is an absolute must. I think it would be a major red flag if not present. Copy from PLOS ONE paper}
 
 
 
@@ -752,7 +785,18 @@ In~\cite{hu2012biophysically} the author proposed a parallel implementation of b
 
 
 
-\section{\gls{cstm}}
+
+
+
+
+
+\section{Our Computational Model and Implementation}
+
+{\bf Absolutely need a proper paragraph here. Can this be driven by one of the figure captions?}
+
+{\bf Important suggestion from Silvio: We absolutely must make sure this is in the right order. That is, it should follow the dataflow. It is also important that we highlight the Encoder Layer and deemphasize other other parts. Corpora generation is a preprocessing step. We need a good (non-incriminating) explanation for why we're not addressing parallel performance of other layers, e.g. Cortical}
+
+\subsection{\gls{cstm}}
 
 Our \gls{cstm} simulates a patch of cortical tissue in the mammalian brain~\cite{Dematties2018}. Fig. \ref{fig:EncoderColumnConnections} shows the data flow of the information converging to a \gls{cc} inside the \glsfirst{el}--the main algorithm in this model. Sound waves are firstly processed by the \gls{mrstsa} algorithm. We followed the main guidelines in the implementation of the cortical section of Chi T. et al. \cite{chi_2005} model in order to implement the \gls{mrstsa} algorithm.
 
@@ -787,19 +831,6 @@ Each cell unit in a \gls{cc} has two types of dendritic branches; proximal and d
     \label{fig:Pyramidal_Cell}
 \end{figure}
 
-
-
-
-
-
-
-
-
-
-
-
-
-\section{Computational Implementation}
 
 \subsection{\glsfirst{el} Implementation}
 
@@ -1027,6 +1058,8 @@ All the code that generates the corpora is implemented in Python and parallelize
 
 \section{Results}
 
+
+
 Parallel scalability is a measurement that indicates how efficient is a code when using an increasing number of parallel processing elements--Nodes or Processes and \glspl{cpu} or Threads--on a computational resource. There are two ways to measure the parallel performance of a given application. The measure to be applied will depend on whether the application is \gls{cpu}-bound or memory-bound. Such measurements are referred to as \emph{strong} and \emph{weak} scaling, respectively~\cite{noauthor_measuring_nodate}.
 
 
@@ -1040,9 +1073,11 @@ Parallel scalability is a measurement that indicates how efficient is a code whe
 
 
 
+\subsection{Experimental Setup}
 
+{\bf You need to describe the details of vectorization, optimization, etc. What compiler is used? What options? }
 
-
+{\bf MPI version, OpenMP version / options, Vectorization info for GCC. Is LLVM being used? }
 
 \subsection{\glsfirst{el} Scaling Tests}
 
@@ -1482,7 +1517,9 @@ By means of the results returned by this round of tests, we esteem this parallel
 \fi
 
 
-The authors would like to thank...
+This research was supported by grants from Agencia Nacional de Promoción Científica y Tecnológica (PICT 2012-1519 and 2016-2145), University of Buenos Aires (UBACYT 20020130100485BA), CONICET (PIP 01054).
+
+This work used resources of the Argonne Leadership Computing Facility at Argonne National Laboratory, which is supported by the Office of Science of the U.S. Department of Energy under contract DE-AC02-06CH11357. 
 
 
 % Can use something like this to put references on a page
